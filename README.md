@@ -18,14 +18,14 @@
 
 ## Design choices
 
-1. Semicolons separate expressions rather than end them
+1. Semicolons separate statements rather than end them
 2. Does not automatically initialize variables
 
 ## Running
 
-Assemble with:
-cargo run -- source.pas destination.s
-Compile with:
+Assemble with:\
+cargo run -- source.pas destination.s\
+Compile with:\
 gcc source.s -o destination -lm
 
 ## Known issues
