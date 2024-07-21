@@ -31,7 +31,7 @@ BEGIN
 			write(mem[memIdx])
 		ELSE IF (code[codeIdx] = ',') and (ord(inputText[inputIdx]) <> 10) THEN BEGIN
 			mem[memIdx] := inputText[inputIdx];
-			inputIdx := inputIdx + 1;
+			inputIdx := inputIdx + 1
 		END ELSE IF (code[codeIdx] = '[') and (ord(mem[memIdx]) = 0) THEN BEGIN
 			balance := 1;
 			WHILE balance <> 0 DO BEGIN
@@ -51,10 +51,10 @@ BEGIN
 					balance := balance - 1
 			END
 		END;
-		codeIdx := codeIdx + 1;
+		codeIdx := codeIdx + 1
 	END;
 
-	writeln;
+	writeln
 
 END.
 

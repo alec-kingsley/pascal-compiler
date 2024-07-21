@@ -14,9 +14,9 @@ BEGIN
 		IF avg * avg > goal THEN
 			tooHigh := avg
 		ELSE
-			lowEnough := avg;
+			lowEnough := avg
 	END;
-	writeln('sqrt(', goal, ') = ', lowEnough);
+	writeln('sqrt(', goal, ') = ', lowEnough)
 END.
 
 

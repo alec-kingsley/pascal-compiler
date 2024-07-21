@@ -112,7 +112,7 @@ fn evaluate_factor(factor: &Factor, src: &str, label_idx: &mut u32, errors: &mut
                 report(src, *start, *end, "Expected integer as argument", "error");
                 *errors += 1;
             }
-            (integer_value, Type::Integer, is_constant)
+            (integer_value, Type::Char, is_constant)
 
         } else if name == "SQRT" {
             if arguments.len() != 1 {
@@ -507,7 +507,7 @@ fn evaluate_expression(expression: &Expression, src: &str, label_idx: &mut u32, 
             } else {
                 panic!("Invalid type"); // TODO - Not a meaningful error
             };
-            (out, expression_tipe, true) 
+            (out, Type::Boolean, true) 
             
         } else {
             let mut out = String::new();

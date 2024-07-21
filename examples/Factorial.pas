@@ -9,8 +9,8 @@ BEGIN
 	r := 1;
 	WHILE n > 1 DO BEGIN
 		r := r * n;
-		n := n - 1;
+		n := n - 1
 	END
 	write('! = ');
-	writeln(r);
+	writeln(r)
 END.
