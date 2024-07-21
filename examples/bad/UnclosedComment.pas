@@ -1,0 +1,6 @@
+PROGRAM UnclosedComment;
+
+BEGIN
+END.
+{
+

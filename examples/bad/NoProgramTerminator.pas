@@ -1,0 +1,4 @@
+PROGRAM NoProgramTerminator;
+
+BEGIN
+END
