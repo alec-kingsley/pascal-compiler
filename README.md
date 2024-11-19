@@ -14,7 +14,7 @@
 	1. All common operators
 	2. built-in functions: `SQR()`, `SQRT()`
 6. Built-in procedures
-	1. read, readln, write, writeln
+	1. `READ()`, `READLN()`, `WRITE()`, `WRITELN()`
 
 ## Design choices
 
