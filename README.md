@@ -23,10 +23,11 @@
 
 ## Running
 
-Assemble with:\
-cargo run -- source.pas destination.s\
 Compile with:\
+```
+cargo run -- source.pas destination.s
 gcc source.s -o destination -lm
+```
 
 ## Known issues
 
