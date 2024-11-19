@@ -10,7 +10,7 @@ BEGIN
 	WHILE n > 1 DO BEGIN
 		r := r * n;
 		n := n - 1
-	END
+	END;
 	write('! = ');
 	writeln(r)
 END.
