@@ -1,5 +1,5 @@
 
-# Minimal pascal assembler to x86-64 assembly (AT&T syntax). 
+# Minimal pascal compiler to x86-64 assembly (AT&T syntax). 
 
 ## Supported features
 
