@@ -25,8 +25,8 @@
 
 Compile with:\
 ```
-cargo run -- source.pas destination.s
-gcc source.s -o destination -lm
+cargo run -- program.pas program.s
+gcc program.s -o program -lm
 ```
 
 ## Known issues
