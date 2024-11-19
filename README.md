@@ -5,14 +5,14 @@
 
 1. Types
 	1. integer, boolean, char, real, string, text, array (must be in format: array[start..end] of type)
-	2. built-in type conversion: ord(), chr()
+	2. built-in type conversion: `ORD()`, `CHR()`
 2. Logic blocks
 	1. if, if-else, for, while, repeat-until, begin-end
 3. Constants
 4. Variables
 5. Math
 	1. All common operators
-	2. built-in functions: SQR, SQRT
+	2. built-in functions: `SQR()`, `SQRT()`
 6. Built-in procedures
 	1. read, readln, write, writeln
 
