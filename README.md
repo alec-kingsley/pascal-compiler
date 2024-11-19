@@ -9,6 +9,7 @@
 2. Logic blocks
 	1. if, if-else, for, while, repeat-until, begin-end
 3. Constants
+    1. `CONST` block as well as some pre-defined constants like `maxint`, `true`, and `false`
 4. Variables
 5. Math
 	1. All common operators
@@ -23,7 +24,7 @@
 
 ## Running
 
-Compile with:\
+Compile with:
 ```
 cargo run -- program.pas program.s
 gcc program.s -o program -lm
