@@ -18,11 +18,11 @@ BEGIN
 		write('Guess: ');
 		read(guess);
 		IF guess < secretNumber THEN
-			writeln(-1) { too low }
+			writeln('Too low.')
 		ELSE IF guess > secretNumber THEN
-			writeln(1) { too high }
+			writeln('Too high.')
 		ELSE
-			writeln(0)
+			writeln('You got it!')
 	END
 
 END.
