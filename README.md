@@ -41,7 +41,6 @@ gcc program.s -o program -lm
 
 ## Next planned features
 
-1. Thoroughly evaluate signed float comparasion
-2. Add functions / procedures
+1. Add functions / procedures
 
 
