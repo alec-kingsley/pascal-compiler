@@ -150,11 +150,11 @@ fn evaluate_factor(factor: &Factor, src: &str, label_idx: &mut u32, errors: &mut
             let (mut input_value, tipe, is_constant) = evaluate_expression(arguments.get(0).unwrap(), src, label_idx, errors, warnings, rodata, variable_map, constant_map);
             if is_constant {
                 if tipe == Type::Integer {
-                    let int_input_value = input_value.parse::<u64>().unwrap();
+                    let int_input_value = input_value.parse::<i64>().unwrap();
                     (format!("{}", int_input_value*int_input_value), Type::Integer, true)
                 } else if tipe == Type::Real {
-                    let int_input_value = input_value.parse::<f64>().unwrap();
-                    (format!("{}", int_input_value*int_input_value), Type::Real, true)
+                    let float_input_value = input_value.parse::<f64>().unwrap();
+                    (format!("{}", float_input_value*float_input_value), Type::Real, true)
                 } else {
                     report(src, *start, *end, "Expected integer or real as argument", "error");
                     *errors += 1;
@@ -167,6 +167,43 @@ fn evaluate_factor(factor: &Factor, src: &str, label_idx: &mut u32, errors: &mut
                 (input_value, Type::Integer, false)
             } else if tipe == Type::Real {
                 input_value.push_str("\tmulsd\t%xmm0, %xmm0\n");
+                (input_value, Type::Real, false)
+            } else {
+                report(src, *start, *end, "Expected integer or real as argument", "error");
+                *errors += 1;
+                (String::new(), Type::Undefined, false)
+            }
+
+        } else if name == "ABS" {
+            if arguments.len() != 1 {
+                report(src, *start, *end, "Expected 1 argument", "error");
+                *errors += 1;
+                return (String::new(), Type::Real, false);
+            }
+            let (mut input_value, tipe, is_constant) = evaluate_expression(arguments.get(0).unwrap(), src, label_idx, errors, warnings, rodata, variable_map, constant_map);
+            if is_constant {
+                if tipe == Type::Integer {
+                    let int_input_value = input_value.parse::<i64>().unwrap();
+                    (format!("{}",
+                        if int_input_value >= 0 { int_input_value } else { - int_input_value }
+                             ), Type::Integer, true)
+                } else if tipe == Type::Real {
+                    let float_input_value = input_value.parse::<f64>().unwrap();
+                    (format!("{}", 
+                        if float_input_value > 0.0 { float_input_value } else { - float_input_value }
+                             ), Type::Real, true)
+                } else {
+                    report(src, *start, *end, "Expected integer or real as argument", "error");
+                    *errors += 1;
+                    (String::new(), Type::Undefined, false)
+                }
+            } else if tipe == Type::Integer {
+                input_value.push_str("\
+                                \tmovq\t%rax, %rdi\n\
+                                \tcall\tabs\n");
+                (input_value, Type::Integer, false)
+            } else if tipe == Type::Real {
+                input_value.push_str("\tcall\tfabs\n");
                 (input_value, Type::Real, false)
             } else {
                 report(src, *start, *end, "Expected integer or real as argument", "error");
@@ -270,7 +307,7 @@ fn evaluate_term(term: &Term, src: &str, label_idx: &mut u32, errors: &mut u32, 
     while operators_idx < term.operators.len() {
         let operator = term.operators[operators_idx].clone();
         let (mut value2, tipe2, is_constant2) = evaluate_factor(&term.operands[operators_idx + 1].clone(), src, label_idx, errors, warnings, rodata, variable_map, constant_map);
-        let term_tipe = evaluate_type(tipe1.clone(), tipe2.clone());
+        let mut term_tipe = evaluate_type(tipe1.clone(), tipe2.clone());
         if term_tipe == Type::Undefined && tipe1 != Type::Undefined && tipe2 != Type::Undefined {
             report(src, term.start, term.end, "Mismatched types in term", "error");
             *errors += 1;
@@ -285,8 +322,15 @@ fn evaluate_term(term: &Term, src: &str, label_idx: &mut u32, errors: &mut u32, 
                 Type::Real if operator == "MOD" => format!("{}",value1.parse::<f64>().unwrap() % value2.parse::<f64>().unwrap()),
                 Type::Integer if operator == "AND" => format!("{}",value1.parse::<i64>().unwrap() & value2.parse::<i64>().unwrap()),
                 Type::Boolean if operator == "AND" => format!("{}",value1.parse::<bool>().unwrap() && value2.parse::<bool>().unwrap()),
-                // TODO - update this error reporting
-                Type::Integer if operator == "/" => panic!("/ used for integers instead of DIV"),
+                Type::Integer if operator == "/" => {
+                    report(src, term.start, term.end, "/ is for reals. Did you mean DIV?", "warning");
+                    term_tipe = Type::Real;
+                    format!("{}",value1.parse::<f64>().unwrap() / value2.parse::<f64>().unwrap())
+                },
+                Type::Real if operator == "DIV" => {
+                    report(src, term.start, term.end, "DIV is for integers. Did you mean /?", "warning");
+                    format!("{}",value1.parse::<f64>().unwrap() / value2.parse::<f64>().unwrap())
+                },
                 Type::Real if operator == "DIV" => panic!("DIV used for reals instead of /"),
                 _ => String::new(),
             };
@@ -303,14 +347,16 @@ fn evaluate_term(term: &Term, src: &str, label_idx: &mut u32, errors: &mut u32, 
             out.push_str(&value2);
             if term_tipe == Type::Real {
                 if tipe1 == Type::Integer {
+                    out.push_str("\tsubq\t$8, %rsp\n");
+                    out.push_str("\tmovsd\t%xmm0, (%rsp)\n");
+                    out.push_str(&value1);
+                    out.push_str("\tcvtsi2sd %rax, %xmm0\n");
+                    out.push_str("\tmovsd\t(%rsp), %xmm1\n");
+                    out.push_str("\taddq\t$8, %rsp\n");
+                } else if tipe2 == Type::Integer {
                     out.push_str("\tpushq\t%rax\n");
                     out.push_str(&value1);
                     out.push_str("\tpopq\t%rax\n");
-                    out.push_str("\tcvtsi2sd %rax, %xmm1\n");
-                } else if tipe2 == Type::Integer {
-                    // Since this means that value1 was a float, it being in xmm0 can't harm
-                    // anything
-                    out.push_str(&value1);
                     out.push_str("\tcvtsi2sd %rax, %xmm1\n");
                 } else {
                     out.push_str("\tsubq\t$8, %rsp\n");
@@ -333,9 +379,19 @@ fn evaluate_term(term: &Term, src: &str, label_idx: &mut u32, errors: &mut u32, 
                                     \tmovq\t%rdx, %rcx\n\
                                     \tmovq\t$0, %rdx\n\
                                     \tidivq\t%rcx\n"),
-                "/" if term_tipe == Type::Integer => report(src, term.start, term.end, "/ is for reals. Did you mean DIV?", "error"),
+                "/" if term_tipe == Type::Integer => {
+                    report(src, term.start, term.end, "/ is for reals. Did you mean DIV?", "warning");
+                    term_tipe = Type::Real;
+                    out.push_str("\
+                                    \tcvtsi2sd %rax, %xmm0\n\
+                                    \tcvtsi2sd %rdx, %xmm1\n\
+                                    \tdivsd\t%xmm1, %xmm0\n")
+                },
                 "/" if term_tipe == Type::Real => out.push_str("\tdivsd\t%xmm1, %xmm0\n"),
-                "DIV" if term_tipe == Type::Real => report(src, term.start, term.end, "DIV is for integers. Did you mean /?", "error"),
+                "DIV" if term_tipe == Type::Real => {
+                    report(src, term.start, term.end, "DIV is for integers. Did you mean /?", "warning");
+                    out.push_str("\tdivsd\t%xmm1, %xmm0\n")
+                }
                 "MOD" if term_tipe == Type::Integer => out.push_str("\
                                     \tmovq\t%rdx, %rcx\n\
                                     \tmovq\t$0, %rdx\n\
@@ -359,8 +415,21 @@ fn evaluate_term(term: &Term, src: &str, label_idx: &mut u32, errors: &mut u32, 
 fn evaluate_simple_expression(simple_expression: &SimpleExpression, src: &str, label_idx: &mut u32, errors: &mut u32, warnings: &mut u32, rodata: &mut Vec<(u32, String)>, variable_map: &HashMap<String, (isize, Type)>, constant_map: &HashMap<String, (String, Type)>) -> (String, Type, bool) {
     let (mut value1, mut tipe1, mut is_constant1) = evaluate_term(&simple_expression.operands[0].clone(), src, label_idx, errors, warnings, rodata, variable_map, constant_map);
 
-    if is_constant1 && !simple_expression.positive {
+    if !simple_expression.positive {
+        if is_constant1 {
             value1 = format!("-{}", value1);
+        } else {
+            match tipe1 {
+                Type::Integer => value1.push_str("\tnegq\t%rax\n"),
+                Type::Real => value1.push_str("\tmovq\t$0x8000000000000000, %rax\n\tmovq\t%rax, %xmm2\n\txorpd\t%xmm2, %xmm0\n"),
+                Type::Undefined => {},
+                _ => {
+                    report(src, simple_expression.start, simple_expression.end, "Unrecognized attempt to negate first term", "error");
+                    *errors += 1;    
+                },
+            }
+        }
+
     }
 
     let mut operators_idx = 0;
@@ -417,17 +486,6 @@ fn evaluate_simple_expression(simple_expression: &SimpleExpression, src: &str, l
                 out.push_str("\tpopq\t%rdx\n");
             }
 
-            // negate first operand if needed
-            if !simple_expression.positive {
-                if simple_expression_tipe == Type::Integer {
-                    out.push_str("\tnegq\t%rax\n");
-                } else if simple_expression_tipe == Type::Real {
-                    out.push_str("\tmovq\t$0x8000000000000000, %rax\n\tmovq\t%rax, %xmm2\n\txorpd\t%xmm2, %xmm0\n");
-                } else if simple_expression_tipe != Type:: Undefined {
-                    report(src, simple_expression.start, simple_expression.end, "Unrecognized attempt to negate first term", "error");
-                    *errors += 1;
-                }
-            }
 
             // preform the operation
             match operator.as_str() {

@@ -11,7 +11,7 @@ mod x86_64_compiler;
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() != 3 {
-        panic!("Must have two arguments: source and destination");
+        panic!("Usage: cargo run -- src.pas dest.s");
     }
     // read source file
     let src = &args[1];

@@ -8,13 +8,16 @@
 	2. built-in type conversion: `ORD()`, `CHR()`
 2. Logic blocks
 	1. if, if-else, for, while, repeat-until, begin-end
-3. Constants
+3. Literals
+    1. characters and strings both enclosed in ''
+    2. support for scientific notation (example: epsilon := 1E-6)
+4. Constants
     1. `CONST` block as well as some pre-defined constants like `maxint`, `true`, and `false`
-4. Variables
-5. Math
-	1. All common operators
+5. Variables
+6. Math
+	1. all common operators
 	2. built-in functions: `SQR()`, `SQRT()`
-6. Built-in procedures
+7. Built-in procedures
 	1. `READ()`, `READLN()`, `WRITE()`, `WRITELN()`
 
 ## Design choices

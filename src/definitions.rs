@@ -60,7 +60,7 @@ pub fn report(code: &str, start: usize, end: usize, err: &str, variant: &str) {
     match variant {
         "syntax" => print!("\x1b[31m\nSyntax error \x1b[0m"), // red
         "error" => print!("\x1b[31m\nError \x1b[0m"), // red
-        "varning" => print!("\x1b[33m\nWarning \x1b[0m"), // yellow
+        "warning" => print!("\x1b[33m\nWarning \x1b[0m"), // yellow
         _   => panic!("Unknown error"),
     }
 

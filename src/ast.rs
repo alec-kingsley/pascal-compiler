@@ -604,7 +604,7 @@ fn parse_factor(code: &str, i: &mut usize) -> Factor {
                             Ok(f) => {next_token(code, i); f},
                             Err(_) => {
                                 peeker = next_token(code, i); 
-                                report(code, *i - peeker.len(), *i, "Expected number","syntax");
+                                report(code, *i - peeker.len(), *i, "Expected number", "syntax");
                                 panic!()
                             },
                         };
@@ -620,17 +620,39 @@ fn parse_factor(code: &str, i: &mut usize) -> Factor {
                     }
                 },
                 Err(_) => {
-                        syntax_check(peeker.starts_with('\''), code, *i - peeker.len(), "Failed to parse factor");
-                        let quote = &peeker[1..peeker.len()-1]; // remove the ''
-                        if quote.len() == 1 {
-                            let ch = quote.chars().next().unwrap();
-                            if ch.is_ascii() {
-                                Factor::Constant(UnsignedConstant::Char(ch as u8))
+                        syntax_check(
+                            (peeker.starts_with('\'') && peeker.ends_with('\''))
+                            || peeker.ends_with('E'), 
+                            code, *i - peeker.len(), "Failed to parse factor");
+
+                        if peeker.ends_with('E') {
+                            let mantissa = peeker[0..peeker.len() - 1].parse::<u64>().unwrap_or_else(|_| {
+                                report(code, *i - peeker.len(), *i, "Failed to parse factor", "syntax");
+                                0
+                            });
+                            let exponent = if last_token(code, i) == "-" {
+                                next_token(code, i);
+                                -1 
+                            } else {
+                                1
+                            } * next_token(code, i).parse::<u16>().unwrap_or_else(|_| {
+                                report(code, *i - peeker.len(), *i, "Failed to parse factor", "syntax");
+                                0
+                            }) as i16;
+                            Factor::Constant(UnsignedConstant::UnsignedReal(mantissa as f64 * 10f64.powf(exponent as f64)))
+                                
+                        } else {
+                            let quote = &peeker[1..peeker.len()-1]; // remove the ''
+                            if quote.len() == 1 {
+                                let ch = quote.chars().next().unwrap();
+                                if ch.is_ascii() {
+                                    Factor::Constant(UnsignedConstant::Char(ch as u8))
+                                } else {
+                                    Factor::Constant(UnsignedConstant::Quote(quote.to_string()))
+                                }
                             } else {
                                 Factor::Constant(UnsignedConstant::Quote(quote.to_string()))
                             }
-                        } else {
-                            Factor::Constant(UnsignedConstant::Quote(quote.to_string()))
                         }
                 },
             }
