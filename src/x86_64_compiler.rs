@@ -277,7 +277,6 @@ fn evaluate_term(term: &Term, src: &str, label_idx: &mut u32, errors: &mut u32, 
             (value1, tipe1, is_constant1) = (String::new(), Type::Undefined, true);
         } else if is_constant1 && is_constant2 {
             let res = match term_tipe {
-                // TODO - Add proper error reporting for DIV with reals and / with integers
                 Type::Integer if operator == "*" => format!("{}",value1.parse::<i64>().unwrap() * value2.parse::<i64>().unwrap()),
                 Type::Real if operator == "*" => format!("{}",value1.parse::<f64>().unwrap() * value2.parse::<f64>().unwrap()),
                 Type::Integer if operator == "DIV" => format!("{}",value1.parse::<i64>().unwrap() / value2.parse::<i64>().unwrap()),
@@ -286,6 +285,9 @@ fn evaluate_term(term: &Term, src: &str, label_idx: &mut u32, errors: &mut u32, 
                 Type::Real if operator == "MOD" => format!("{}",value1.parse::<f64>().unwrap() % value2.parse::<f64>().unwrap()),
                 Type::Integer if operator == "AND" => format!("{}",value1.parse::<i64>().unwrap() & value2.parse::<i64>().unwrap()),
                 Type::Boolean if operator == "AND" => format!("{}",value1.parse::<bool>().unwrap() && value2.parse::<bool>().unwrap()),
+                // TODO - update this error reporting
+                Type::Integer if operator == "/" => panic!("/ used for integers instead of DIV"),
+                Type::Real if operator == "DIV" => panic!("DIV used for reals instead of /"),
                 _ => String::new(),
             };
             (value1, tipe1, is_constant1) = (res, term_tipe, true);
@@ -357,6 +359,10 @@ fn evaluate_term(term: &Term, src: &str, label_idx: &mut u32, errors: &mut u32, 
 fn evaluate_simple_expression(simple_expression: &SimpleExpression, src: &str, label_idx: &mut u32, errors: &mut u32, warnings: &mut u32, rodata: &mut Vec<(u32, String)>, variable_map: &HashMap<String, (isize, Type)>, constant_map: &HashMap<String, (String, Type)>) -> (String, Type, bool) {
     let (mut value1, mut tipe1, mut is_constant1) = evaluate_term(&simple_expression.operands[0].clone(), src, label_idx, errors, warnings, rodata, variable_map, constant_map);
 
+    if is_constant1 && !simple_expression.positive {
+            value1 = format!("-{}", value1);
+    }
+
     let mut operators_idx = 0;
     while operators_idx < simple_expression.operators.len() {
         let operator = simple_expression.operators[operators_idx].clone();
@@ -368,9 +374,6 @@ fn evaluate_simple_expression(simple_expression: &SimpleExpression, src: &str, l
             (value1, tipe1, is_constant1) = (String::new(), Type::Undefined, true);
         } else if is_constant1 && is_constant2 {
             // evaluate constant
-            if !simple_expression.positive {
-                value1 = format!("-{}",value1);
-            }
             let res = match simple_expression_tipe {
                 Type::Integer if operator == "+" => format!("{}",value1.parse::<i64>().unwrap() + value2.parse::<i64>().unwrap()),
                 Type::Real if operator == "+" => format!("{}",value1.parse::<f64>().unwrap() + value2.parse::<f64>().unwrap()),
@@ -701,8 +704,8 @@ fn get_constant_map(constants: &Vec<Constant>, src: &str, label_idx: &mut u32, e
     let mut result = HashMap::new();
    
     // generic constants
-    result.insert("TRUE".to_string(), ("$1".to_string(), Type::Boolean));
-    result.insert("FALSE".to_string(), ("$0".to_string(), Type::Boolean));
+    result.insert("TRUE".to_string(), ("true".to_string(), Type::Boolean));
+    result.insert("FALSE".to_string(), ("false".to_string(), Type::Boolean));
     result.insert("MAXINT".to_string(), (format!("${}", 2_u64.pow(63)-1), Type::Integer));
     
     // user defined constants
