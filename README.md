@@ -10,7 +10,7 @@
 	1. if, if-else, for, while, repeat-until, begin-end
 3. Literals
     1. characters and strings both enclosed in ''
-    2. support for scientific notation (example: epsilon := 1E-6)
+    2. minimal support for scientific notation (example: epsilon := 1E-6)
 4. Constants
     1. `CONST` block as well as some pre-defined constants like `maxint`, `true`, and `false`
 5. Variables
@@ -44,6 +44,10 @@ gcc program.s -o program -lm
 
 ## Next planned features
 
-1. Add functions / procedures
+1. Expand scientific notation to allow for decimal before E
+2. Add more common math functions (ln, exp)
+3. Implement number formatting using colons in write calls
+4. Add procedures
+5. Add functions
 
 

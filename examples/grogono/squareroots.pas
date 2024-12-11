@@ -10,3 +10,10 @@ PROGRAM squareroots (input,output);
       UNTIL x = 0
   END.
 
+{
+Input:
+		2
+		3
+		4
+		0
+}

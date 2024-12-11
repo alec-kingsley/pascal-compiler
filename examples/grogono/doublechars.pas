@@ -14,3 +14,10 @@ PROGRAM doublechars (input, output);
       END { while }
   END. { doublechar }
 
+{
+Input:
+	
+Baa, baa, black sheep,
+Have you any wool?
+
+}
