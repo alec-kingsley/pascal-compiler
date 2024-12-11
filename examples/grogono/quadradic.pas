@@ -18,8 +18,8 @@ PROGRAM quadratic (input, output);
 					THEN writeln('The roots are', re + im, 
 					                       'and', re - im)
 					ELSE writeln('The roots are complex',
-						            re, '+I*', im,
-										'and', re, '-I*', im)
+					                re, '+I*', im,
+					                'and', re, '-I*', im)
 			END
 	END. { quadratic }
 
