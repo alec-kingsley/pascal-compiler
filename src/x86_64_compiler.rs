@@ -953,11 +953,11 @@ fn process_statement(code: &Statement, src: &str, label_idx: &mut u32, errors: &
                         \tcall\tscanf\n\
                             ", location, label));
                 },
-                // calloc 255 bytes for string input, then take string input
+                // calloc 256 bytes for string input, then take string input
                 Type::Stryng => {
                     let label = request_label(label_idx, rodata, ".string \" %[^\\n]s\""); 
                     out.push_str(&format!("\
-                        \tmovq\t$255, %rdi\n\
+                        \tmovq\t$256, %rdi\n\
                         \tmovq\t$1, %rsi\n\
                         \tcall\tcalloc\n\
                         \tmovq\t%rax, -{}(%rbp)\n\

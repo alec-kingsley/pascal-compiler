@@ -36,11 +36,11 @@ gcc program.s -o program -lm
 ## Known issues
 
 1. String input limited to 255 bytes
-2. Doesn't sanitize strings... Back slashes should be preceded by a back slash, as well as % maybe
+2. Doesn't sanitize strings, currently throws them into printf (ignored since I don't want to keep libc dependency)
 3. Blatant syntax error reporting seems pretty solid but need a nice looking warning/error reporting for other errors
 4. Error reporting for unrecognized identifiers just crashes program
-5. Calloc's every time a string is read in and free's none of it
-6. Sometimes fails when special characters like ≥ are used
+5. Calloc's every time a string is read in and free's none of it (after dropping libc dependency I'll store strings a different way entirely)
+6. Support for special characters like ≥ is poor and they should be avoided for now
 
 ## Next planned features
 
