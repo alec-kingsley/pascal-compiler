@@ -53,26 +53,34 @@ pub fn report(code: &str, start: usize, end: usize, err: &str, variant: &str) {
     }
 
     let mut block = String::from(&code[start - char_idx..end_of_line_idx]);
-    
+
     block.insert_str(char_idx + end - start, "\x1b[38;5;208m"); // return to orange after error
     block.insert_str(char_idx, "\x1b[31m"); // switch to red for error
-    
+
     match variant {
         "syntax" => print!("\x1b[31m\nSyntax error \x1b[0m"), // red
-        "error" => print!("\x1b[31m\nError \x1b[0m"), // red
-        "warning" => print!("\x1b[33m\nWarning \x1b[0m"), // yellow
-        _   => panic!("Unknown error"),
+        "error" => print!("\x1b[31m\nError \x1b[0m"),         // red
+        "warning" => print!("\x1b[33m\nWarning \x1b[0m"),     // yellow
+        _ => panic!("Unknown error"),
     }
 
-    println!("{}", &format!("\
+    println!(
+        "{}",
+        &format!(
+            "\
             at line {}, character {}:\n\
             {}\n\
-            \x1b[38;5;208m{}\x1b[0m", line_idx + 1, char_idx + 1, err, block));
+            \x1b[38;5;208m{}\x1b[0m",
+            line_idx + 1,
+            char_idx + 1,
+            err,
+            block
+        )
+    );
 
     if variant == "syntax" {
         process::exit(1);
     }
-
 }
 
 // these definitions are from Peter Grogono's Programming in Pascal (1978)
@@ -143,7 +151,17 @@ pub enum Statement {
     // (condition, body, condition_start, condition_end)
     RepeatLoop(Expression, Box<Statement>, usize, usize),
     // (identifier, identifier_start, identifier_end, starting expression, ending expression, range_start, range_end, ascending?, statement)
-    ForLoop(String, usize, usize, Expression, Expression, usize, usize, bool, Box<Statement>),
+    ForLoop(
+        String,
+        usize,
+        usize,
+        Expression,
+        Expression,
+        usize,
+        usize,
+        bool,
+        Box<Statement>,
+    ),
     // StatementList must be of form:
     // BEGIN
     //   statement;
@@ -186,7 +204,7 @@ pub enum Factor {
     Parenthetical(Expression),
     // (factor, start, end)
     NegatedFactor(Box<Factor>, usize, usize),
-    List(Vec<ExpressionOrRange>)
+    List(Vec<ExpressionOrRange>),
 }
 #[derive(Clone)]
 pub enum ExpressionOrRange {
@@ -203,6 +221,3 @@ pub enum UnsignedConstant {
     Quote(String),
     Char(u8),
 }
-
-
-

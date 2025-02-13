@@ -33,22 +33,30 @@ fn syntax_check(cond: bool, code: &str, mut i: usize, err: &str) {
 ///
 /// # Arguments
 /// * `code` - A string representing the user program.
-/// 
+///
 pub fn parse_program(code: &str) -> Program {
     // return value
     let mut program = Program {
-        body: Block { constants: Vec::new(), local_variables: Vec::new(), body: Statement::StatementList(Vec::new()) },
+        body: Block {
+            constants: Vec::new(),
+            local_variables: Vec::new(),
+            body: Statement::StatementList(Vec::new()),
+        },
     };
     let mut i: usize = 0;
-    
+
     // this variable holds a single token to view what it is
     let mut peeker = last_token(code, &mut i);
     syntax_check(peeker == "PROGRAM", code, i, "Missing PROGRAM keyword");
     next_token(code, &mut i);
 
-    syntax_check(is_valid_identifier(&last_token(code, &mut i)), code, i, "Invalid identifier");
+    syntax_check(
+        is_valid_identifier(&last_token(code, &mut i)),
+        code,
+        i,
+        "Invalid identifier",
+    );
     next_token(code, &mut i); // This is the program keyword. Currently not used.
-    
 
     peeker = last_token(code, &mut i);
     if peeker == "(" {
@@ -58,34 +66,35 @@ pub fn parse_program(code: &str) -> Program {
     }
 
     peeker = last_token(code, &mut i);
-    syntax_check(peeker == ";", 
-            code, i, "Expected ;");
+    syntax_check(peeker == ";", code, i, "Expected ;");
     next_token(code, &mut i);
 
     program.body = parse_block(code, &mut i);
-   
-    syntax_check(last_token(code, &mut i) == ".", 
-            code, i, "Invalid program terminator");
+
+    syntax_check(
+        last_token(code, &mut i) == ".",
+        code,
+        i,
+        "Invalid program terminator",
+    );
 
     program
 }
-
 
 /// Parse block.
 ///
 /// # Arguments
 /// * `code` - A string representing the user program.
 /// * `i` - An index within `code` representing a point after the last token processed.
-/// 
+///
 fn parse_block(code: &str, i: &mut usize) -> Block {
-
     let mut peeker = next_token(code, i);
     let mut constants = Vec::new();
-	let mut local_variables = Vec::new();
+    let mut local_variables = Vec::new();
 
     let mut seen_const = false;
     let mut seen_var = false;
-	// search for body (only required part of a block)
+    // search for body (only required part of a block)
     while peeker != "BEGIN" {
         // TODO - Parse labels, types, procedures, functions
         // parse constant block
@@ -113,7 +122,12 @@ fn parse_block(code: &str, i: &mut usize) -> Block {
                 while last_token(code, i) == "," {
                     next_token(code, i);
                     let identifier = last_token(code, i);
-                    syntax_check(is_valid_identifier(&identifier), code, *i, "Invalid identifier");
+                    syntax_check(
+                        is_valid_identifier(&identifier),
+                        code,
+                        *i,
+                        "Invalid identifier",
+                    );
                     next_token(code, i);
                     identifiers.push(identifier);
                 }
@@ -123,14 +137,21 @@ fn parse_block(code: &str, i: &mut usize) -> Block {
                 syntax_check(last_token(code, i) == ";", code, *i, "Expected ;");
                 next_token(code, i);
                 for identifier in identifiers {
-                    local_variables.push(Variable { name: identifier, tipe: tipe.clone() });
+                    local_variables.push(Variable {
+                        name: identifier,
+                        tipe: tipe.clone(),
+                    });
                 }
             }
         }
         peeker = next_token(code, i);
     }
-    
-	Block { constants, local_variables, body: parse_statement_list(code, i) }
+
+    Block {
+        constants,
+        local_variables,
+        body: parse_statement_list(code, i),
+    }
 }
 
 /// Parse type.
@@ -153,7 +174,7 @@ fn parse_type(code: &str, i: &mut usize) -> SuperType {
             // it's about the same so I'll leave this
             syntax_check(last_token(code, i) == "ARRAY", code, *i, "Expected ARRAY");
             parse_type(code, i)
-        },
+        }
         "ARRAY" => {
             syntax_check(last_token(code, i) == "[", code, *i, "Expected [");
             next_token(code, i);
@@ -169,8 +190,17 @@ fn parse_type(code: &str, i: &mut usize) -> SuperType {
             next_token(code, i);
             let tipe = parse_type(code, i);
             SuperType::Array(Box::new(tipe), start_idx, end_idx)
-        },
-        _ => { report(code, *i - peeker.len(), *i, "Failed to parse type", "syntax"); panic!() }
+        }
+        _ => {
+            report(
+                code,
+                *i - peeker.len(),
+                *i,
+                "Failed to parse type",
+                "syntax",
+            );
+            panic!()
+        }
     }
 }
 
@@ -210,21 +240,25 @@ fn parse_statement(code: &str, i: &mut usize) -> Statement {
             let expression = parse_expression(code, i);
             let end = *i;
             Statement::ElementAssignment(peeker, index, expression, start, end)
-
         } else {
             // TODO - There's a difference between these, handle it
             if peeker == "READ" || peeker == "READLN" {
                 *i -= peeker.len();
-                parse_read_call(code, i)   
+                parse_read_call(code, i)
             } else {
                 parse_procedure_call(&peeker, code, i)
             }
         }
     } else {
-        report(code, *i - peeker.len(), *i, "Unrecognized statement", "syntax");
+        report(
+            code,
+            *i - peeker.len(),
+            *i,
+            "Unrecognized statement",
+            "syntax",
+        );
         panic!()
     }
-
 }
 
 /// Parse statement list.
@@ -245,11 +279,16 @@ fn parse_statement_list(code: &str, i: &mut usize) -> Statement {
     while peeker != "END" {
         statement_list.push(parse_statement(code, i));
         peeker = last_token(code, i);
-        syntax_check(peeker == ";" || peeker == "END", code, *i, "Expected ; or END");
+        syntax_check(
+            peeker == ";" || peeker == "END",
+            code,
+            *i,
+            "Expected ; or END",
+        );
         peeker = next_token(code, i);
     }
-    
-   	Statement::StatementList(statement_list)
+
+    Statement::StatementList(statement_list)
 }
 
 /// Parse if statement.
@@ -265,8 +304,7 @@ fn parse_if_statement(code: &str, i: &mut usize) -> Statement {
     let condition = parse_expression(code, i);
     let condition_end = *i;
     let peeker = last_token(code, i);
-    syntax_check(peeker.as_str() == "THEN", 
-            code, *i, "Missing THEN after IF");
+    syntax_check(peeker.as_str() == "THEN", code, *i, "Missing THEN after IF");
     next_token(code, i);
 
     let true_body = parse_statement(code, i);
@@ -278,7 +316,13 @@ fn parse_if_statement(code: &str, i: &mut usize) -> Statement {
     } else {
         Statement::DoNothing
     };
-    Statement::IfStatement(condition, Box::new(true_body), Box::new(false_body), condition_start, condition_end)
+    Statement::IfStatement(
+        condition,
+        Box::new(true_body),
+        Box::new(false_body),
+        condition_start,
+        condition_end,
+    )
 }
 
 /// Parse while loop.
@@ -297,7 +341,7 @@ fn parse_while_loop(code: &str, i: &mut usize) -> Statement {
     let peeker = last_token(code, i);
 
     syntax_check(peeker.as_str() == "DO", code, *i, "Missing DO after WHILE");
-    
+
     next_token(code, i);
     let body = parse_statement(code, i);
     Statement::WhileLoop(condition, Box::new(body), condition_start, condition_end)
@@ -320,18 +364,25 @@ fn parse_repeat_loop(code: &str, i: &mut usize) -> Statement {
     while peeker != "UNTIL" {
         statement_list.push(parse_statement(code, i));
         peeker = last_token(code, i);
-        syntax_check(peeker == ";" || peeker == "UNTIL", code, *i, "Expected ; or UNTIL");
+        syntax_check(
+            peeker == ";" || peeker == "UNTIL",
+            code,
+            *i,
+            "Expected ; or UNTIL",
+        );
         peeker = next_token(code, i);
     }
-    
+
     let condition_start = *i;
     let condition = parse_expression(code, i);
     let condition_end = *i;
-   	Statement::RepeatLoop(condition, Box::new(Statement::StatementList(statement_list)), condition_start, condition_end)
-
+    Statement::RepeatLoop(
+        condition,
+        Box::new(Statement::StatementList(statement_list)),
+        condition_start,
+        condition_end,
+    )
 }
-
-
 
 /// Parse for loop.
 ///
@@ -342,7 +393,6 @@ fn parse_repeat_loop(code: &str, i: &mut usize) -> Statement {
 /// * `i` - An index within `code` representing a point after the last token processed.
 ///
 fn parse_for_loop(code: &str, i: &mut usize) -> Statement {
-    
     let name_start = *i;
 
     // ensure valid identifier, save
@@ -355,12 +405,17 @@ fn parse_for_loop(code: &str, i: &mut usize) -> Statement {
     // ensure followed by :=
     syntax_check(last_token(code, i) == ":=", code, *i, "Expected :=");
     next_token(code, i);
-    
+
     // get range
     let range_start = *i;
     let start = parse_expression(code, i);
     peeker = last_token(code, i);
-    syntax_check(peeker == "TO" || peeker == "DOWNTO", code, *i, "Expected TO or DOWNTO");
+    syntax_check(
+        peeker == "TO" || peeker == "DOWNTO",
+        code,
+        *i,
+        "Expected TO or DOWNTO",
+    );
     next_token(code, i);
     let ascending = peeker == "TO";
     let end = parse_expression(code, i);
@@ -372,7 +427,17 @@ fn parse_for_loop(code: &str, i: &mut usize) -> Statement {
 
     // get body, return
     let body = parse_statement(code, i);
-    Statement::ForLoop(identifier, name_start, name_end, start, end, range_start, range_end, ascending, Box::new(body))
+    Statement::ForLoop(
+        identifier,
+        name_start,
+        name_end,
+        start,
+        end,
+        range_start,
+        range_end,
+        ascending,
+        Box::new(body),
+    )
 }
 
 /// Parse procedure call.
@@ -386,9 +451,13 @@ fn parse_for_loop(code: &str, i: &mut usize) -> Statement {
 fn parse_procedure_call(procedure_identifier: &str, code: &str, i: &mut usize) -> Statement {
     let start = *i - procedure_identifier.len();
 
-    syntax_check(is_valid_identifier(procedure_identifier), 
-            code, *i - procedure_identifier.len(), "Invalid identifier");
-    
+    syntax_check(
+        is_valid_identifier(procedure_identifier),
+        code,
+        *i - procedure_identifier.len(),
+        "Invalid identifier",
+    );
+
     let mut arguments: Vec<Expression> = Vec::new();
     let mut peeker = next_token(code, i);
     if peeker != "(" {
@@ -400,14 +469,13 @@ fn parse_procedure_call(procedure_identifier: &str, code: &str, i: &mut usize) -
             // could be a procedure identifier as well, but a single identifier is a valid
             // expression.
             arguments.push(parse_expression(code, i));
-            
+
             // remove next comma or )
             peeker = next_token(code, i);
         }
     }
     let end = *i;
     Statement::ProcedureCall(procedure_identifier.to_string(), arguments, start, end)
-
 }
 
 /// Parse read call.
@@ -426,7 +494,12 @@ fn parse_read_call(code: &str, i: &mut usize) -> Statement {
     syntax_check(last_token(code, i) == "(", code, *i, "Expected (");
     let mut peeker = next_token(code, i);
     while peeker != ")" {
-        syntax_check(is_valid_identifier(&last_token(code, i)), code, *i, "Invalid identifier");
+        syntax_check(
+            is_valid_identifier(&last_token(code, i)),
+            code,
+            *i,
+            "Invalid identifier",
+        );
         variable_list.push(next_token(code, i));
         // consume comma or )
         peeker = next_token(code, i);
@@ -447,7 +520,7 @@ fn parse_expression(code: &str, i: &mut usize) -> Expression {
     let start = *i;
 
     let operand1 = parse_simple_expression(code, i);
-    
+
     // operator and operand2 are optional
     let operator = if is_equality_operator(&last_token(code, i)) {
         next_token(code, i)
@@ -459,12 +532,17 @@ fn parse_expression(code: &str, i: &mut usize) -> Expression {
     } else {
         parse_simple_expression(code, i)
     };
-    
+
     let end = *i;
 
     // create and return expression
-    Expression { start, end, operand1, operand2, operator, }
-
+    Expression {
+        start,
+        end,
+        operand1,
+        operand2,
+        operator,
+    }
 }
 
 /// Parse simple expression.
@@ -476,12 +554,18 @@ fn parse_expression(code: &str, i: &mut usize) -> Expression {
 /// * `i` - An index within `code` representing a point after the last token processed.
 ///
 fn parse_simple_expression(code: &str, i: &mut usize) -> SimpleExpression {
-    let start = *i; 
+    let start = *i;
     // take off + or - if present, set positive appropriately
     let positive = match last_token(code, i).as_str() {
-        "+" => {next_token(code, i); true},
-        "-" => {next_token(code, i); false},
-        _   => true,
+        "+" => {
+            next_token(code, i);
+            true
+        }
+        "-" => {
+            next_token(code, i);
+            false
+        }
+        _ => true,
     };
     let mut operators: Vec<String> = Vec::new();
     let mut operands: Vec<Term> = Vec::new();
@@ -490,18 +574,21 @@ fn parse_simple_expression(code: &str, i: &mut usize) -> SimpleExpression {
     while matches!(last_token(code, i).as_str(), "+" | "-" | "OR") {
         operators.push(next_token(code, i));
         operands.push(parse_term(code, i));
-    } 
-     
-    
+    }
+
     let end = *i;
-    SimpleExpression { start, end, positive, operands, operators, }
-
+    SimpleExpression {
+        start,
+        end,
+        positive,
+        operands,
+        operators,
+    }
 }
-
 
 /// Parse term.
 ///
-/// * / DIV MOD AND 
+/// * / DIV MOD AND
 ///
 /// # Arguments
 /// * `code` - A string representing the user program.
@@ -514,13 +601,21 @@ fn parse_term(code: &str, i: &mut usize) -> Term {
     let mut operands: Vec<Factor> = Vec::new();
     // must be at least one factor
     operands.push(parse_factor(code, i));
-    while matches!(last_token(code, i).as_str(), "*" | "/" | "DIV" | "MOD" | "AND") {
+    while matches!(
+        last_token(code, i).as_str(),
+        "*" | "/" | "DIV" | "MOD" | "AND"
+    ) {
         operators.push(next_token(code, i));
         operands.push(parse_factor(code, i));
     }
-   
+
     let end = *i;
-    Term { start, end, operands, operators, }
+    Term {
+        start,
+        end,
+        operands,
+        operators,
+    }
 }
 
 /// Parse factor.
@@ -532,7 +627,6 @@ fn parse_term(code: &str, i: &mut usize) -> Term {
 /// * `i` - An index within `code` representing a point after the last token processed.
 ///
 fn parse_factor(code: &str, i: &mut usize) -> Factor {
-
     let start = *i;
     let mut peeker = next_token(code, i);
 
@@ -552,17 +646,16 @@ fn parse_factor(code: &str, i: &mut usize) -> Factor {
                 while peeker != ")" {
                     arguments.push(parse_expression(code, i));
                     peeker = next_token(code, i);
-			    }
-		    }
+                }
+            }
             let end = *i;
-		    Factor::Identifier(identifier, arguments, start, end)
+            Factor::Identifier(identifier, arguments, start, end)
         }
     // expression in parentheses
     } else if peeker == "(" {
         let factor = Factor::Parenthetical(parse_expression(code, i));
         peeker = last_token(code, i);
-        syntax_check(peeker == ")", 
-                code, *i, "Unclosed (");
+        syntax_check(peeker == ")", code, *i, "Unclosed (");
         next_token(code, i);
         factor
 
@@ -571,42 +664,42 @@ fn parse_factor(code: &str, i: &mut usize) -> Factor {
         let factor = parse_factor(code, i);
         let end = *i;
         Factor::NegatedFactor(Box::new(factor), start, end)
-        
+
     // list of expressions / ranges
     } else if peeker == "[" {
         let mut expression_list: Vec<ExpressionOrRange> = Vec::new();
         while peeker != "]" {
             let expression1 = parse_expression(code, i);
             peeker = next_token(code, i);
-            expression_list.push(
-                if peeker.as_str() == ".." {
-                    let pusher = ExpressionOrRange::Range(expression1, parse_expression(code, i));
-                    next_token(code, i);
-                    pusher
-                } else {
-                    ExpressionOrRange::Expression(expression1)
-                }
-            );
-
+            expression_list.push(if peeker.as_str() == ".." {
+                let pusher = ExpressionOrRange::Range(expression1, parse_expression(code, i));
+                next_token(code, i);
+                pusher
+            } else {
+                ExpressionOrRange::Expression(expression1)
+            });
         }
         Factor::List(expression_list)
-    
+
     // constant
     } else {
         if peeker == "NIL" {
             Factor::Constant(UnsignedConstant::Nil(*i - "NIL".len()))
         } else {
             match peeker.parse::<u64>() {
-                Ok(n) => { 
+                Ok(n) => {
                     if last_token(code, i) == "." {
                         next_token(code, i);
-                        let decimal = match last_token(code, i).parse::<u64>()  {
-                            Ok(f) => {next_token(code, i); f},
+                        let decimal = match last_token(code, i).parse::<u64>() {
+                            Ok(f) => {
+                                next_token(code, i);
+                                f
+                            }
                             Err(_) => {
-                                peeker = next_token(code, i); 
+                                peeker = next_token(code, i);
                                 report(code, *i - peeker.len(), *i, "Expected number", "syntax");
                                 panic!()
-                            },
+                            }
                         };
                         let mut power = 1;
                         let mut temp_decimal = decimal;
@@ -614,52 +707,71 @@ fn parse_factor(code: &str, i: &mut usize) -> Factor {
                             temp_decimal /= 10;
                             power *= 10;
                         }
-                        Factor::Constant(UnsignedConstant::UnsignedReal(n as f64 + decimal as f64 / power as f64))
+                        Factor::Constant(UnsignedConstant::UnsignedReal(
+                            n as f64 + decimal as f64 / power as f64,
+                        ))
                     } else {
                         Factor::Constant(UnsignedConstant::UnsignedInteger(n))
                     }
-                },
+                }
                 Err(_) => {
-                        syntax_check(
-                            (peeker.starts_with('\'') && peeker.ends_with('\''))
-                            || peeker.ends_with('E'), 
-                            code, *i - peeker.len(), "Failed to parse factor");
+                    syntax_check(
+                        (peeker.starts_with('\'') && peeker.ends_with('\''))
+                            || peeker.ends_with('E'),
+                        code,
+                        *i - peeker.len(),
+                        "Failed to parse factor",
+                    );
 
-                        if peeker.ends_with('E') {
-                            let mantissa = peeker[0..peeker.len() - 1].parse::<u64>().unwrap_or_else(|_| {
-                                report(code, *i - peeker.len(), *i, "Failed to parse factor", "syntax");
-                                0
-                            });
-                            let exponent = if last_token(code, i) == "-" {
-                                next_token(code, i);
-                                -1 
-                            } else {
-                                1
-                            } * next_token(code, i).parse::<u16>().unwrap_or_else(|_| {
-                                report(code, *i - peeker.len(), *i, "Failed to parse factor", "syntax");
-                                0
-                            }) as i16;
-                            Factor::Constant(UnsignedConstant::UnsignedReal(mantissa as f64 * 10f64.powf(exponent as f64)))
-                                
+                    if peeker.ends_with('E') {
+                        let mantissa =
+                            peeker[0..peeker.len() - 1]
+                                .parse::<u64>()
+                                .unwrap_or_else(|_| {
+                                    report(
+                                        code,
+                                        *i - peeker.len(),
+                                        *i,
+                                        "Failed to parse factor",
+                                        "syntax",
+                                    );
+                                    0
+                                });
+                        let exponent = if last_token(code, i) == "-" {
+                            next_token(code, i);
+                            -1
                         } else {
-                            let quote = &peeker[1..peeker.len()-1]; // remove the ''
-                            if quote.len() == 1 {
-                                let ch = quote.chars().next().unwrap();
-                                if ch.is_ascii() {
-                                    Factor::Constant(UnsignedConstant::Char(ch as u8))
-                                } else {
-                                    Factor::Constant(UnsignedConstant::Quote(quote.to_string()))
-                                }
+                            1
+                        } * next_token(code, i).parse::<u16>().unwrap_or_else(|_| {
+                            report(
+                                code,
+                                *i - peeker.len(),
+                                *i,
+                                "Failed to parse factor",
+                                "syntax",
+                            );
+                            0
+                        }) as i16;
+                        Factor::Constant(UnsignedConstant::UnsignedReal(
+                            mantissa as f64 * 10f64.powf(exponent as f64),
+                        ))
+                    } else {
+                        let quote = &peeker[1..peeker.len() - 1]; // remove the ''
+                        if quote.len() == 1 {
+                            let ch = quote.chars().next().unwrap();
+                            if ch.is_ascii() {
+                                Factor::Constant(UnsignedConstant::Char(ch as u8))
                             } else {
                                 Factor::Constant(UnsignedConstant::Quote(quote.to_string()))
                             }
+                        } else {
+                            Factor::Constant(UnsignedConstant::Quote(quote.to_string()))
                         }
-                },
+                    }
+                }
             }
         }
-
     }
-
 }
 
 /// Returns "true" iff `token` is an equality operator, given by the equality_operators vector.
@@ -680,7 +792,7 @@ fn is_equality_operator(token: &str) -> bool {
 ///
 fn is_valid_identifier(token: &str) -> bool {
     let mut is_valid = true;
-    
+
     // ensure that first character is a letter A-Z
     if !token.chars().next().unwrap().is_ascii_alphabetic() {
         is_valid = false;
@@ -693,14 +805,43 @@ fn is_valid_identifier(token: &str) -> bool {
     }
 
     // set up reserved words
-    let reserved_words = ["AND", "ARRAY", "BEGIN", "CASE", "CONST", 
-            "DIV", "DO", "DOWNTO", "ELSE", "END", "FILE", "FOR", 
-            "FUNCTION", "GOTO", "IF", "IN", "LABEL", "MOD", "NIL",
-            "NOT", "OF", "OR", "PACKED", "PROCEDURE", "PROGRAM",
-            "RECORD", "REPEAT", "SET", "THEN", "TO", "TYPE", "UNTIL",
-            "VAR", "WHILE", "WITH"];
+    let reserved_words = [
+        "AND",
+        "ARRAY",
+        "BEGIN",
+        "CASE",
+        "CONST",
+        "DIV",
+        "DO",
+        "DOWNTO",
+        "ELSE",
+        "END",
+        "FILE",
+        "FOR",
+        "FUNCTION",
+        "GOTO",
+        "IF",
+        "IN",
+        "LABEL",
+        "MOD",
+        "NIL",
+        "NOT",
+        "OF",
+        "OR",
+        "PACKED",
+        "PROCEDURE",
+        "PROGRAM",
+        "RECORD",
+        "REPEAT",
+        "SET",
+        "THEN",
+        "TO",
+        "TYPE",
+        "UNTIL",
+        "VAR",
+        "WHILE",
+        "WITH",
+    ];
 
     is_valid && !reserved_words.contains(&token)
 }
-
-

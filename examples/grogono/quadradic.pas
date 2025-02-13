@@ -37,5 +37,5 @@ PROGRAM quadratic (input, output);
 		The roots are -1.5000000 and 0
 		The roots are -2.0000000 and -3.000000
 		The roots are complex -5.000000 +I* 0.866025
-											and -5.000000 +I* 0.866025
+		                  and -5.000000 +I* 0.866025
 }

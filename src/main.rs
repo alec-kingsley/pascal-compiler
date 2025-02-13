@@ -16,13 +16,12 @@ fn main() {
     // read source file
     let src = &args[1];
 
-    let code = fs::read_to_string(src)
-        .expect("Failed to read from file.");
-    
+    let code = fs::read_to_string(src).expect("Failed to read from file.");
+
     // compile program, get destination file
     let pascal_ast = ast::parse_program(&code);
     let (x86_64, errors, warnings) = x86_64_compiler::compile(pascal_ast, &code);
-    
+
     if errors > 0 {
         print!("Compilation failed due to {} ", errors);
         if errors > 1 {
@@ -54,10 +53,7 @@ fn main() {
         let dest = &args[2];
 
         // write output and exit
-        fs::write(dest,x86_64).expect("Failed to write to file.");
-        println!("Successfully written to {}.",dest);
+        fs::write(dest, x86_64).expect("Failed to write to file.");
+        println!("Successfully written to {}.", dest);
     }
 }
-
-
-

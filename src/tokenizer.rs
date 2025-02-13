@@ -1,37 +1,34 @@
-use std::process;
 use std::collections::HashSet;
-
+use std::process;
 
 // get symbol at location i, if non-existent return ""
 fn get_symbol(code: &str, i: usize) -> String {
-
     // pascal punctuation
     // NOTE: Some say that AND/OR/NOT are punctuation, however I decided to tokenize them as
     // identifiers instead. So for example, "sand" and "more" are valid identifiers.
     let symbols: HashSet<&str> = vec![
-            "+", "-", "*", "/", "<", "≤", "<=", "=", 
-            "≠", "<>", "≥", ">=", ">", "∧", "∨", 
-            "¬", "~", ":=", ",", ";", ",", ";", 
-            ":", "'", ".", "..", "(", ")", "[", "(.", 
-            "]", ".)", "//", "{", "(*", "}", "*)"
-        ].into_iter().collect();
-    
+        "+", "-", "*", "/", "<", "≤", "<=", "=", "≠", "<>", "≥", ">=", ">", "∧", "∨", "¬", "~",
+        ":=", ",", ";", ",", ";", ":", "'", ".", "..", "(", ")", "[", "(.", "]", ".)", "//", "{",
+        "(*", "}", "*)",
+    ]
+    .into_iter()
+    .collect();
+
     // Comment symbols:
     // // or {} or (**)
     // these should be removed by tokenizer
 
-    
     // token to be returned
     let mut token = String::new();
     for symbol in symbols.iter() {
-        if symbol.len() > token.len() 
+        if symbol.len() > token.len()
             && i + symbol.len() <= code.len()
-            && *symbol == &code[i..i+symbol.len()] {
-            
+            && *symbol == &code[i..i + symbol.len()]
+        {
             token = symbol.to_string();
         }
     }
-    
+
     token
 }
 
@@ -43,7 +40,7 @@ fn next_token_runner(code: &str, i: &mut usize, ignore_special: bool) -> String 
         *i += 1; // Skip whitespace
     }
 
-    let mut token:String = get_symbol(code, *i);
+    let mut token: String = get_symbol(code, *i);
     *i += token.len();
 
     match token.as_str() {
@@ -73,23 +70,42 @@ fn next_token_runner(code: &str, i: &mut usize, ignore_special: bool) -> String 
                 let ch = code[*i..].chars().next().unwrap();
                 token.push(ch);
                 *i += ch.len_utf8();
-                if ch=='\'' {
+                if ch == '\'' {
                     break;
                 }
             }
-            assert!(code[*i-1..].chars().next().unwrap() == '\'',"Unmatched ' found")
+            assert!(
+                code[*i - 1..].chars().next().unwrap() == '\'',
+                "Unmatched ' found"
+            )
         }
 
         // pascal synonyms
-        "≤" => {token = "<=".to_string();}
-        "≠" => {token = "<>".to_string();}
-        "≥" => {token = ">=".to_string();}
-        "∧" => {token = "AND".to_string();}
-        "∨" => {token = "OR".to_string();}
-        "¬" | "~" => {token = "NOT".to_string();}
-        "(." => {token = "[".to_string();}
-        ".)" => {token = "]".to_string();}
-        
+        "≤" => {
+            token = "<=".to_string();
+        }
+        "≠" => {
+            token = "<>".to_string();
+        }
+        "≥" => {
+            token = ">=".to_string();
+        }
+        "∧" => {
+            token = "AND".to_string();
+        }
+        "∨" => {
+            token = "OR".to_string();
+        }
+        "¬" | "~" => {
+            token = "NOT".to_string();
+        }
+        "(." => {
+            token = "[".to_string();
+        }
+        ".)" => {
+            token = "]".to_string();
+        }
+
         "" => {
             while *i < code.len() {
                 let ch = code[*i..].chars().next().unwrap();
@@ -97,20 +113,20 @@ fn next_token_runner(code: &str, i: &mut usize, ignore_special: bool) -> String 
                     break;
                 }
                 token.push(ch);
-                    *i += ch.len_utf8();
+                *i += ch.len_utf8();
             }
 
             // pascal is not case-sensitive, so we make all identifiers uppercase
             token = token.to_uppercase();
         }
         _ => {}
-    } 
+    }
 
-    if token.len() > 0 { 
-        token 
-    } else if *i < code.len() { 
-        next_token_runner(code, i, false) 
-    } else { 
+    if token.len() > 0 {
+        token
+    } else if *i < code.len() {
+        next_token_runner(code, i, false)
+    } else {
         "".to_string()
     }
 }
@@ -132,7 +148,3 @@ pub fn last_token(code: &str, i: &mut usize) -> String {
     let mut j = *i;
     next_token(code, &mut j)
 }
-
-
-
-
